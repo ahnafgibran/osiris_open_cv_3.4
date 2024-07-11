@@ -4,13 +4,13 @@ FROM open_cv_3.4:latest
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy the entire project directory to the working directory
-COPY . .
-
 # Install any additional dependencies if necessary
 RUN apt-get update && \
     apt-get install -y cmake g++ make && \
     rm -rf /var/lib/apt/lists/*
+
+# Copy the entire project directory to the working directory
+COPY . .
 
 # Create a build directory
 RUN mkdir build

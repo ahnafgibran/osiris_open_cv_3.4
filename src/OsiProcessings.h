@@ -133,7 +133,7 @@ namespace osiris
         * @return The macthing score between 0 (completely similar) and 1 (completely different)
         * @see encode() , OsiEye::match()
         */
-        float match ( const IplImage * image1 , const IplImage * image2 , const IplImage * mask ) ;
+        float match ( const IplImage * image1 , const IplImage * image2 , const IplImage * mask, int &numUnmaskedBits ) ;
 
 
 

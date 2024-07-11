@@ -65,6 +65,7 @@ namespace osiris
     private :
 
         // Commands
+        bool mProcessBase64Images ;
         bool mProcessSegmentation ;
         bool mProcessNormalization ;
         bool mProcessEncoding ;
@@ -75,6 +76,7 @@ namespace osiris
         std::string mFilenameListOfImages ;
         std::vector<std::string> mListOfImages ;
         std::string mInputDirOriginalImages ;
+        std::string mInputDirOriginalImagesBase64 ;
         std::string mInputDirMasks ;
         std::string mInputDirParameters ;
         std::string mInputDirNormalizedImages ;

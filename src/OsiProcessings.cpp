@@ -480,7 +480,7 @@ namespace osiris
 
     float OsiProcessings::match(const IplImage *image1,
                                 const IplImage *image2,
-                                const IplImage *mask)
+                                const IplImage *mask, int &numUnmaskedBits)
     {
         // Temporary matrix to store the XOR result
         IplImage *result = cvCreateImage(cvGetSize(image1), IPL_DEPTH_8U, 1);
@@ -502,6 +502,9 @@ namespace osiris
             float mean = (cvSum(result).val[0]) / (cvSum(mask).val[0]);
             score = min(score, mean);
         }
+
+        // Calculate the number of unmasked bits
+        numUnmaskedBits = cvSum(mask).val[0];
 
         // Free memory
         cvReleaseImage(&shifted);

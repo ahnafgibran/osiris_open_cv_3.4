@@ -46,6 +46,13 @@ namespace osiris
         */
         void loadOriginalImage ( const std::string & rFilename ) ;
 
+        /** Load the original image corresponding to the eye.
+        * @param rFilename Complete path of the image
+        * @return void
+        * @see loadImage()
+        */
+        void loadOriginalImageFromBase64 ( const std::string & rFilename ) ;
+
         /** Load the binary mask corresponding to the eye.
         * @param rFilename Complete path of the image
         * @return void
@@ -188,6 +195,8 @@ namespace osiris
 
         /** The original image corresponding to the eye (input only). */
         IplImage * mpOriginalImage ;
+        /** The original image corresponding to the eye (input only). */
+        IplImage * mpOriginalImageBase64 ;
 
         /** The segmented image (color) corresponding to the eye (output only). */
         IplImage * mpSegmentedImage ;
@@ -228,6 +237,13 @@ namespace osiris
         * @return void
         */
         void loadImage ( const std::string & rFilename , IplImage ** ppImage ) ;
+
+        /** Generic function to save the image-like attributes of the eye.
+        * @param rFilename The complete path of the image
+        * @param ppImage A pointer of pointer on the image
+        * @return void
+        */
+        void loadImageFromBase64 ( const std::string & rFilename , IplImage ** ppImage ) ;
 
 
         /** Generic function to load the image-like attributes of the eye.

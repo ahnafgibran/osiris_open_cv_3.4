@@ -2,6 +2,7 @@
 build/
 !.gitignore
 data/CASIA-iRISv2/
+data/CASIA-iRISv2-base64/
 data/OsirisParam/
 data/Output/
 doc/

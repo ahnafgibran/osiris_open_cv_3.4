@@ -6,11 +6,19 @@
  * License : BSD
  ********************************************************/
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/imgcodecs/imgcodecs.hpp>
 #include <fstream>
 #include <stdexcept>
 #include "cv.h"
 #include "OsiEye.h"
 #include "OsiProcessings.h"
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include "../include/base64.hpp"
 
 using namespace std;
 
@@ -23,6 +31,7 @@ namespace osiris
     OsiEye::OsiEye()
     {
         mpOriginalImage = 0;
+        mpOriginalImageBase64 = 0;
         mpSegmentedImage = 0;
         mpMask = 0;
         mpNormalizedImage = 0;
@@ -35,6 +44,7 @@ namespace osiris
     OsiEye::~OsiEye()
     {
         cvReleaseImage(&mpOriginalImage);
+        cvReleaseImage(&mpOriginalImageBase64);
         cvReleaseImage(&mpSegmentedImage);
         cvReleaseImage(&mpMask);
         cvReleaseImage(&mpNormalizedImage);
@@ -67,9 +77,81 @@ namespace osiris
         }
     }
 
+    void OsiEye::loadImageFromBase64(const string &rFilename, IplImage **ppImage)
+    {
+        try
+        {
+            if (*ppImage)
+            {
+                cvReleaseImage(ppImage);
+            }
+
+            // Read the file content
+            ifstream file(rFilename);
+            if (!file)
+            {
+                cout << "Cannot open file : " << rFilename << endl;
+                return;
+            }
+
+            stringstream buffer;
+            buffer << file.rdbuf();
+            string base64String = buffer.str();
+            file.close();
+
+            // Decode base64 string to bytes
+            auto decodedData = base64::from_base64(base64String);
+            std::cout << "Decoded data size: " << decodedData.size() << std::endl;
+
+            // Convert decoded data to cv::Mat
+            vector<uchar> data(decodedData.begin(), decodedData.end());
+            cv::Mat img = cv::imdecode(data, cv::IMREAD_GRAYSCALE);
+
+            if (img.empty())
+            {
+                cout << "Cannot decode base64 image data" << endl;
+                return;
+            }
+            else
+            {
+                cout << "Image decoded from base64 data" << endl;
+            }
+
+            // Convert cv::Mat to IplImage
+            *ppImage = cvCreateImage(cvSize(img.cols, img.rows), IPL_DEPTH_8U, img.channels());
+            if (*ppImage)
+            {
+                memcpy((*ppImage)->imageData, img.data, img.total() * img.elemSize());
+            }
+            else
+            {
+                cout << "Cannot create IplImage from base64 data" << endl;
+            }
+
+            if (!*ppImage)
+            {
+                cout << "Cannot load image from base64 data" << endl;
+            }
+            else
+            {
+                cout << "Image loaded from base64 data" << endl;
+            }
+        }
+        catch (exception &e)
+        {
+            cout << e.what() << endl;
+        }
+    }
+
     void OsiEye::loadOriginalImage(const string &rFilename)
     {
         loadImage(rFilename, &mpOriginalImage);
+    }
+
+    void OsiEye::loadOriginalImageFromBase64(const string &rFilename)
+    {
+        // loadImageFromBase64(rFilename, &mpOriginalImageBase64);
+        loadImageFromBase64(rFilename, &mpOriginalImage);
     }
 
     void OsiEye::loadMask(const string &rFilename)
@@ -263,9 +345,30 @@ namespace osiris
         std::cout << "maxIrisDiameter: " << maxIrisDiameter << std::endl;
         std::cout << "maxPupilDiameter: " << maxPupilDiameter << std::endl;
 
+        // Verify the original image dimensions
+        std::cout << "Original Image Size: " << mpOriginalImage->width << "x" << mpOriginalImage->height << std::endl;
+
         // Initialize mask and segmented image
         mpMask = cvCreateImage(cvGetSize(mpOriginalImage), IPL_DEPTH_8U, 1);
+        if (!mpMask)
+        {
+            std::cerr << "Failed to create mask image" << std::endl;
+        }
+        else
+        {
+            std::cout << "Mask image created successfully" << std::endl;
+        }
+
         mpSegmentedImage = cvCreateImage(cvGetSize(mpOriginalImage), IPL_DEPTH_8U, 3);
+        if (!mpSegmentedImage)
+        {
+            std::cerr << "Failed to create segmented image" << std::endl;
+        }
+        else
+        {
+            std::cout << "Segmented image created successfully" << std::endl;
+        }
+
         cvCvtColor(mpOriginalImage, mpSegmentedImage, CV_GRAY2BGR);
 
         // Print intermediate values
@@ -297,7 +400,7 @@ namespace osiris
         // Print final segmented image info
         std::cout << "Segmentation complete" << std::endl;
     }
-    
+
     void OsiEye::normalize(int rWidthOfNormalizedIris, int rHeightOfNormalizedIris)
     {
         // Processing functions
@@ -365,16 +468,26 @@ namespace osiris
         // but one is missing for only one image. However, message must not be spammed if the user
         // did not provide any mask ! So it must be found a way to inform user but without spamming
         if (!mpNormalizedMask)
+        // if (true)
         {
             mpNormalizedMask = cvCreateImage(cvGetSize(pApplicationPoints), IPL_DEPTH_8U, 1);
             cvSet(mpNormalizedMask, cvScalar(255));
-            // cout << "Normalized mask of image 1 is missing for matching. All pixels are initialized to 255" << endl ;
+            cout << "Normalized mask of image 1 is missing for matching. All pixels are initialized to 255" << endl;
+        }
+        else
+        {
+            cout << "Normalized mask of image 1 is available for matching" << endl;
         }
         if (!rEye.mpNormalizedMask)
+        // if (true)
         {
             rEye.mpNormalizedMask = cvCreateImage(cvGetSize(pApplicationPoints), IPL_DEPTH_8U, 1);
             cvSet(rEye.mpNormalizedMask, cvScalar(255));
-            // cout << "Normalized mask of image 2 is missing for matching. All pixels are initialized to 255" << endl ;
+            cout << "Normalized mask of image 2 is missing for matching. All pixels are initialized to 255" << endl;
+        }
+        else
+        {
+            cout << "Normalized mask of image 2 is available for matching" << endl;
         }
 
         // Build the total mask = mask1 * mask2 * points
@@ -394,13 +507,20 @@ namespace osiris
 
         // Match
         OsiProcessings op;
-        float score = op.match(mpIrisCode, rEye.mpIrisCode, total_mask);
+        int numUnmaskedBits;
+        float rawScore = op.match(mpIrisCode, rEye.mpIrisCode, total_mask, numUnmaskedBits);
+        std::cout << "Raw score: " << rawScore << std::endl;
+        std::cout << "Number of unmasked bits: " << numUnmaskedBits << std::endl;
+
+        // Normalize the Hamming distance
+        // TODO: Search for the average number of unmasked bits in the database
+        float normalizedScore = 0.5 - (0.5 - rawScore) * std::sqrt(static_cast<float>(numUnmaskedBits) / 230000.0f);
 
         // Free memory
         cvReleaseImage(&temp);
         cvReleaseImage(&total_mask);
 
-        return score;
+        return normalizedScore;
     }
 
 } // end of namespace

@@ -2,6 +2,11 @@ cmake_minimum_required (VERSION 3.6)
 
 project (Osiris)
 
+# Specify the C++ standard
+set(CMAKE_CXX_STANDARD 17) # Change to 11, 14, 17, or 20 as needed
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 set(srcs 
     src/OsiCircle.cpp
 	src/OsiEye.cpp
@@ -16,6 +21,9 @@ set(incs
 	src/OsiProcessings.h
 	src/OsiStringUtils.h
 	)
+
+# Add include directory
+include_directories(include)
 
 find_package(OpenCV QUIET)
 if (OpenCV_FOUND)
