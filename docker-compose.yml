@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  osiris_open_cv_3.4:
+    image: osiris_open_cv_3.4_image:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/app/data
+    container_name: osiris_open_cv_3.4

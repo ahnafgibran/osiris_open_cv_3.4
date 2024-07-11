@@ -1,0 +1,8 @@
+.vscode/
+build/
+!.gitignore
+data/CASIA-iRISv2/
+data/OsirisParam/
+data/Output/
+doc/
+scores/
