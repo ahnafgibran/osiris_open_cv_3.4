@@ -18,6 +18,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <chrono>
 #include "../include/base64.hpp"
 
 using namespace std;
@@ -515,12 +516,178 @@ namespace osiris
         // Normalize the Hamming distance
         // TODO: Search for the average number of unmasked bits in the database
         float normalizedScore = 0.5 - (0.5 - rawScore) * std::sqrt(static_cast<float>(numUnmaskedBits) / 230000.0f);
-
+        std::cout << "Normalized score: " << normalizedScore << std::endl;
         // Free memory
         cvReleaseImage(&temp);
         cvReleaseImage(&total_mask);
 
-        return normalizedScore;
+        return rawScore;
+        // return normalizedScore;
+    }
+
+    // Function to read buffers and metadata from a file
+    std::pair<IplImage *, IplImage *> OsiEye::read_buffers_from_file(const std::string &input_file)
+    {
+        std::ifstream input(input_file, std::ios::binary);
+        if (!input)
+        {
+            throw std::runtime_error("Failed to open file for reading: " + input_file);
+        }
+
+        // Read width, height, and channels for the first image
+        int width1, height1, channels1;
+        input.read(reinterpret_cast<char *>(&width1), sizeof(width1));
+        input.read(reinterpret_cast<char *>(&height1), sizeof(height1));
+        input.read(reinterpret_cast<char *>(&channels1), sizeof(channels1));
+
+        std::cout << "Width 1: " << width1 << std::endl;
+        std::cout << "Height 1: " << height1 << std::endl;
+
+        // Read the first image buffer
+        size_t buffer1_size = width1 * height1 * channels1;
+        std::vector<uint8_t> buffer1(buffer1_size);
+        input.read(reinterpret_cast<char *>(buffer1.data()), buffer1.size());
+
+        std::cout << "Buffer 1 size: " << buffer1.size() << std::endl;
+
+        // Read delimiter
+        const char delimiter[] = "\0\0\0\0DELIMITER\0\0\0\0";
+        size_t delimiter_size = sizeof(delimiter);
+        char delimiter_read[delimiter_size];
+        input.read(delimiter_read, delimiter_size);
+        if (std::memcmp(delimiter_read, delimiter, delimiter_size) != 0)
+        {
+            throw std::runtime_error("Delimiter not found or incorrect in file.");
+        }
+
+        // Read width, height, and channels for the second image
+        int width2, height2, channels2;
+        input.read(reinterpret_cast<char *>(&width2), sizeof(width2));
+        input.read(reinterpret_cast<char *>(&height2), sizeof(height2));
+        input.read(reinterpret_cast<char *>(&channels2), sizeof(channels2));
+
+        std::cout << "Width 2: " << width2 << std::endl;
+        std::cout << "Height 2: " << height2 << std::endl;
+
+
+        // Read the second image buffer
+        size_t buffer2_size = width2 * height2 * channels2;
+        std::vector<uint8_t> buffer2(buffer2_size);
+        input.read(reinterpret_cast<char *>(buffer2.data()), buffer2.size());
+
+        // Create IplImage for the first image
+        IplImage *image1 = cvCreateImage(cvSize(width1, height1), IPL_DEPTH_8U, channels1);
+        std::memcpy(image1->imageData, buffer1.data(), buffer1.size());
+
+        // Create IplImage for the second image
+        IplImage *image2 = cvCreateImage(cvSize(width2, height2), IPL_DEPTH_8U, channels2);
+        std::memcpy(image2->imageData, buffer2.data(), buffer2.size());
+
+        return std::make_pair(image1, image2);
+    }
+    
+    float OsiEye::matchFromBuffer(const std::string &filename1, const std::string &filename2, const CvMat *pApplicationPoints)
+    {
+        // print size of pApplicationPoints
+        std::cout << "Application points size: " << pApplicationPoints->width << "x" << pApplicationPoints->height << std::endl;
+        std::cout << "Matching from buffer" << std::endl;
+        // Read iris codes and masks from files
+        auto [irisCode1, normalizedMask1] = read_buffers_from_file(filename1);
+        auto [irisCode2, normalizedMask2] = read_buffers_from_file(filename2);
+
+        std::cout << "Iris code 1 size: " << irisCode1->width << std::endl;
+        std::cout << "Iris code 2 size: " << irisCode2->width << std::endl;
+
+        if (!irisCode1 || !irisCode2)
+        {
+            throw std::runtime_error("Cannot match because one or both iris codes could not be read from file");
+        }
+
+        // Use default mask if not provided
+        if (!normalizedMask1)
+        {
+            normalizedMask1 = cvCreateImage(cvGetSize(pApplicationPoints), IPL_DEPTH_8U, 1);
+            cvSet(normalizedMask1, cvScalar(255));
+            std::cout << "Normalized mask of image 1 is missing. All pixels are initialized to 255" << std::endl;
+        }
+        if (!normalizedMask2)
+        {
+            normalizedMask2 = cvCreateImage(cvGetSize(pApplicationPoints), IPL_DEPTH_8U, 1);
+            cvSet(normalizedMask2, cvScalar(255));
+            std::cout << "Normalized mask of image 2 is missing. All pixels are initialized to 255" << std::endl;
+        }
+        if (!normalizedMask1 || normalizedMask1->width != pApplicationPoints->width || normalizedMask1->height != pApplicationPoints->height)
+        {
+            IplImage *resizedMask1 = cvCreateImage(cvGetSize(pApplicationPoints), IPL_DEPTH_8U, 1);
+            cvResize(normalizedMask1, resizedMask1);
+            cvReleaseImage(&normalizedMask1);
+            normalizedMask1 = resizedMask1;
+        }
+
+        if (!normalizedMask2 || normalizedMask2->width != pApplicationPoints->width || normalizedMask2->height != pApplicationPoints->height)
+        {
+            IplImage *resizedMask2 = cvCreateImage(cvGetSize(pApplicationPoints), IPL_DEPTH_8U, 1);
+            cvResize(normalizedMask2, resizedMask2);
+            cvReleaseImage(&normalizedMask2);
+            normalizedMask2 = resizedMask2;
+        }
+
+        // start time
+        auto start = std::chrono::high_resolution_clock::now();
+
+        // Build the total mask
+        IplImage *temp = cvCreateImage(cvGetSize(pApplicationPoints), irisCode1->depth, 1);
+        cvSet(temp, cvScalar(0));
+        cvAnd(normalizedMask1, normalizedMask2, temp, pApplicationPoints);
+
+        auto end1 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed1 = end1 - start;
+        std::cout << "Elapsed time for building total mask: " << elapsed1.count() << " ms" << std::endl;
+
+        std::cout << "Total mask size: " << temp->width << "x" << temp->height << std::endl;
+
+        // Copy the mask for each code
+        int n_codes = irisCode1->height / pApplicationPoints->height;
+        IplImage *total_mask = cvCreateImage(cvGetSize(irisCode1), IPL_DEPTH_8U, 1);
+        for (int n = 0; n < n_codes; n++)
+        {
+            cvSetImageROI(total_mask, cvRect(0, n * pApplicationPoints->height, pApplicationPoints->width, pApplicationPoints->height));
+            cvCopy(temp, total_mask);
+            cvResetImageROI(total_mask);
+        }
+        std::cout << "Size of total mask: " << total_mask->width << "x" << total_mask->height << std::endl;
+
+        auto end2 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed2 = end2 - end1;
+        std::cout << "Elapsed time for copying total mask: " << elapsed2.count() << " ms" << std::endl;
+
+        // Match
+        OsiProcessings op;
+        int numUnmaskedBits;
+        float rawScore = op.match(irisCode1, irisCode2, total_mask, numUnmaskedBits);
+        std::cout << "Raw score: " << rawScore << std::endl;
+        std::cout << "Number of unmasked bits: " << numUnmaskedBits << std::endl;
+
+        // Normalize the Hamming distance
+        float normalizedScore = 0.5 - (0.5 - rawScore) * std::sqrt(static_cast<float>(numUnmaskedBits) / 230000.0f);
+        std::cout << "Normalized score: " << normalizedScore << std::endl;
+
+        // end time
+        auto end = std::chrono::high_resolution_clock::now();
+        // elapsed as ms
+        std::chrono::duration<double, std::milli> elapsed = end - start;
+        std::cout << "Elapsed time: " << elapsed.count() << " ms" << std::endl;
+
+        // Free memory
+        cvReleaseImage(&temp);
+        cvReleaseImage(&total_mask);
+        cvReleaseImage(&irisCode1);
+        cvReleaseImage(&irisCode2);
+        cvReleaseImage(&normalizedMask1);
+        cvReleaseImage(&normalizedMask2);
+
+        return rawScore;
+        // return normalizedScore;
     }
 
 } // end of namespace

@@ -70,6 +70,7 @@ namespace osiris
         bool mProcessNormalization ;
         bool mProcessEncoding ;
         bool mProcessMatching ;
+        bool mProcessMatchingFromBuffer ;
         bool mUseMask ;
 
         // Inputs
@@ -77,6 +78,7 @@ namespace osiris
         std::vector<std::string> mListOfImages ;
         std::string mInputDirOriginalImages ;
         std::string mInputDirOriginalImagesBase64 ;
+        std::string mInputDirBufferIrisCodeAndNormalizedMasks ;
         std::string mInputDirMasks ;
         std::string mInputDirParameters ;
         std::string mInputDirNormalizedImages ;

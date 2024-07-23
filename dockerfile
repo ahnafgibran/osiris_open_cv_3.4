@@ -1,31 +1,49 @@
-# Use the custom OpenCV base image
-FROM open_cv_3.4:latest
+FROM isabek/opencv-3.4:latest
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /app
 
-# Install any additional dependencies if necessary
+# Update and install necessary packages
 RUN apt-get update && \
-    apt-get install -y cmake g++ make && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y \
+    software-properties-common && \
+    add-apt-repository ppa:ubuntu-toolchain-r/test && \
+    apt-get update && \
+    apt-get install -y \
+    gcc-7 \
+    g++-7 \
+    cmake \
+    make \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the entire project directory to the working directory
+# Set GCC 7 as default
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 \
+    && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 60
+
+# Install a newer version of CMake
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.18.4/cmake-3.18.4-Linux-x86_64.sh && \
+    chmod +x cmake-3.18.4-Linux-x86_64.sh && \
+    ./cmake-3.18.4-Linux-x86_64.sh --skip-license --prefix=/usr/local && \
+    rm cmake-3.18.4-Linux-x86_64.sh
+
+# Copy the current directory contents into the container at /app
 COPY . .
 
-# Create a build directory
+# Create build directory
 RUN mkdir build
 
-# Set the working directory to the build directory
+# Set the working directory to /app/build
 WORKDIR /app/build
 
+# Set CXXFLAGS to use C++17
+ENV CXXFLAGS="-std=c++17"
+
 # Configure the project using CMake
-RUN cmake ..
+RUN cmake -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7 ..
 
-# Add a temporary long-running command to pause the build
-# RUN sleep infinity
-
-# Build the project using CMake
+# Build the project
 RUN make
 
-# # Set the entry point to run the built executable
+# Run the compiled binary
 CMD ["./Osiris"]

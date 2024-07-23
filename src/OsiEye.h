@@ -191,6 +191,9 @@ namespace osiris
         */
         float match ( OsiEye & rEye , const CvMat * pApplicationPoints ) ;
 
+        std::pair<IplImage *, IplImage *> read_buffers_from_file(const std::string &input_file);
+        float matchFromBuffer(const std::string &filename1, const std::string &filename2, const CvMat *pApplicationPoints);
+
     private :
 
         /** The original image corresponding to the eye (input only). */

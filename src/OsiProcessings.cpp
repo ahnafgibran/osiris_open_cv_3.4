@@ -487,7 +487,7 @@ namespace osiris
         cvSet(result, cvScalar(0));
 
         // Add borders on the image1 in order to shift it
-        int shift = 10;
+        int shift = 5;
         IplImage *shifted = addBorders(image1, shift);
 
         // The minimum score will be returned

@@ -2,7 +2,7 @@
 * Open Source for Iris : OSIRIS
 * Version : 4.0
 * Date : 2011
-* Author : Guillaume Sutra, Telecom SudParis, France
+* Author : Guillaume Sutra, Telecom SudParis, France`
 * License : BSD
 ********************************************************/
 

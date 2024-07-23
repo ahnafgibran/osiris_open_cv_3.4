@@ -29,10 +29,12 @@ namespace osiris
         mMapBool["Process normalization"] = &mProcessNormalization;
         mMapBool["Process encoding"] = &mProcessEncoding;
         mMapBool["Process matching"] = &mProcessMatching;
+        mMapBool["Process matching from buffer"] = &mProcessMatchingFromBuffer;
         mMapBool["Use the mask provided by osiris"] = &mUseMask;
         mMapString["Load List of images"] = &mFilenameListOfImages;
         mMapString["Load original images"] = &mInputDirOriginalImages;
         mMapString["Load original base64 images"] = &mInputDirOriginalImagesBase64;
+        mMapString["Load buffer iris code and normalized masks"] = &mInputDirBufferIrisCodeAndNormalizedMasks;
         mMapString["Load parameters"] = &mInputDirParameters;
         mMapString["Load masks"] = &mInputDirMasks;
         mMapString["Load normalized images"] = &mInputDirNormalizedImages;
@@ -91,6 +93,7 @@ namespace osiris
         mProcessNormalization = false;
         mProcessEncoding = false;
         mProcessMatching = false;
+        mProcessMatchingFromBuffer = false;
         mUseMask = true;
 
         // Inputs
@@ -98,6 +101,7 @@ namespace osiris
         mFilenameListOfImages = "";
         mInputDirOriginalImages = "";
         mInputDirOriginalImagesBase64 = "";
+        mInputDirBufferIrisCodeAndNormalizedMasks = "";
         mInputDirMasks = "";
         mInputDirParameters = "";
         mInputDirNormalizedImages = "";
@@ -679,55 +683,65 @@ namespace osiris
             }
         }
 
-        for (int i = 0; i < mListOfImages.size(); i++)
+        if (mProcessMatchingFromBuffer)
         {
-            // Message on prompt command to know the progress
-            cout << i + 1 << " / " << mListOfImages.size() << endl;
+            OsiEye eye1;
+            float score = eye1.matchFromBuffer(mInputDirBufferIrisCodeAndNormalizedMasks + "file1.bin", mInputDirBufferIrisCodeAndNormalizedMasks + "file2.bin", mpApplicationPoints);
+            std::cout << "score: " << score << std::endl;
+        }
+        else
+        {
 
-            try
+            for (int i = 0; i < mListOfImages.size(); i++)
             {
-                // Process the eye
-                OsiEye eye;
-                processOneEye(mListOfImages[i], eye);
+                // Message on prompt command to know the progress
+                cout << i + 1 << " / " << mListOfImages.size() << endl;
 
-                // Process a second eye if matching is requested
-                if (mProcessMatching && (i < mListOfImages.size() - 1))
+                try
                 {
-                    std::cout << "matching..." << std::endl;
-                    i++;
-                    cout << i + 1 << " / " << mListOfImages.size() << endl;
-                    OsiEye eye2;
-                    processOneEye(mListOfImages[i], eye2);
+                    // Process the eye
+                    OsiEye eye;
+                    processOneEye(mListOfImages[i], eye);
 
-                    // Match the two iris codes
-                    float score = eye.match(eye2, mpApplicationPoints);
-                    std::cout << "score: " << score << std::endl;
-
-                    // Save in file
-                    if (result_matching)
+                    // Process a second eye if matching is requested
+                    if (mProcessMatching && (i < mListOfImages.size() - 1))
                     {
-                        std::cout << "result_matching..." << std::endl;
-                        try
+                        std::cout << "matching..." << std::endl;
+                        i++;
+                        cout << i + 1 << " / " << mListOfImages.size() << endl;
+                        OsiEye eye2;
+                        processOneEye(mListOfImages[i], eye2);
+
+                        // Match the two iris codes
+                        float score = eye.match(eye2, mpApplicationPoints);
+                        std::cout << "score: " << score << std::endl;
+
+                        // Save in file
+                        if (result_matching)
                         {
-                            result_matching << mListOfImages[i - 1] << " ";
-                            result_matching << mListOfImages[i] << " ";
-                            result_matching << score << endl;
-                        }
-                        catch (exception &e)
-                        {
-                            cout << e.what() << endl;
-                            throw runtime_error("Error while saving result of matching in " + mOutputFileMatchingScores);
+                            std::cout << "result_matching..." << std::endl;
+                            try
+                            {
+                                result_matching << mListOfImages[i - 1] << " ";
+                                result_matching << mListOfImages[i] << " ";
+                                result_matching << score << endl;
+                            }
+                            catch (exception &e)
+                            {
+                                cout << e.what() << endl;
+                                throw runtime_error("Error while saving result of matching in " + mOutputFileMatchingScores);
+                            }
                         }
                     }
                 }
-            }
 
-            catch (exception &e)
-            {
-                cout << e.what() << endl;
-            }
+                catch (exception &e)
+                {
+                    cout << e.what() << endl;
+                }
 
-        } // end for images
+            } // end for images
+        }
 
         // If matching is requested, close the file
         if (result_matching)
