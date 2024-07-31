@@ -25,6 +25,7 @@ namespace osiris
     {
         // Associate lines of configuration file to the attributes
         mMapBool["Process to use base64 images"] = &mProcessBase64Images;
+        mMapBool["Process to use buffer images"] = &mProcessBufferImages;
         mMapBool["Process segmentation"] = &mProcessSegmentation;
         mMapBool["Process normalization"] = &mProcessNormalization;
         mMapBool["Process encoding"] = &mProcessEncoding;
@@ -32,8 +33,10 @@ namespace osiris
         mMapBool["Process matching from buffer"] = &mProcessMatchingFromBuffer;
         mMapBool["Use the mask provided by osiris"] = &mUseMask;
         mMapString["Load List of images"] = &mFilenameListOfImages;
+        mMapString["Load List of iris codes and normalized masks"] = &mFilenameListOfIrisCodesAndNormalizedMasks;
         mMapString["Load original images"] = &mInputDirOriginalImages;
         mMapString["Load original base64 images"] = &mInputDirOriginalImagesBase64;
+        mMapString["Load original buffer images"] = &mInputDirOriginalImagesBuffer;
         mMapString["Load buffer iris code and normalized masks"] = &mInputDirBufferIrisCodeAndNormalizedMasks;
         mMapString["Load parameters"] = &mInputDirParameters;
         mMapString["Load masks"] = &mInputDirMasks;
@@ -46,6 +49,7 @@ namespace osiris
         mMapString["Save normalized images"] = &mOutputDirNormalizedImages;
         mMapString["Save normalized masks"] = &mOutputDirNormalizedMasks;
         mMapString["Save iris codes"] = &mOutputDirIrisCodes;
+        mMapString["Save buffer iris code and normalized masks"] = &mOutputDirBufferIrisCodeAndNormalizedMasks;
         mMapString["Save matching scores"] = &mOutputFileMatchingScores;
         mMapInt["Minimum diameter for pupil"] = &mMinPupilDiameter;
         mMapInt["Maximum diameter for pupil"] = &mMaxPupilDiameter;
@@ -61,6 +65,7 @@ namespace osiris
         mMapString["Suffix for normalized images"] = &mSuffixNormalizedImages;
         mMapString["Suffix for normalized masks"] = &mSuffixNormalizedMasks;
         mMapString["Suffix for iris codes"] = &mSuffixIrisCodes;
+        mMapString["Suffix for iris codes and normalized masks in buffer"] = &mSuffixIrisCodesAndNormalizedMasksInBuffer;
 
         // Initialize all parameters
         initConfiguration();
@@ -98,9 +103,12 @@ namespace osiris
 
         // Inputs
         mListOfImages.clear();
+        mListOfIrisCodesAndNormalizedMasks.clear();
         mFilenameListOfImages = "";
+        mFilenameListOfIrisCodesAndNormalizedMasks = "";
         mInputDirOriginalImages = "";
         mInputDirOriginalImagesBase64 = "";
+        mInputDirOriginalImagesBuffer = "";
         mInputDirBufferIrisCodeAndNormalizedMasks = "";
         mInputDirMasks = "";
         mInputDirParameters = "";
@@ -115,6 +123,7 @@ namespace osiris
         mOutputDirNormalizedImages = "";
         mOutputDirNormalizedMasks = "";
         mOutputDirIrisCodes = "";
+        mOutputDirBufferIrisCodeAndNormalizedMasks = "";
         mOutputFileMatchingScores = "";
 
         // Parameters
@@ -136,6 +145,7 @@ namespace osiris
         mSuffixNormalizedImages = "_imno.bmp";
         mSuffixNormalizedMasks = "_mano.bmp";
         mSuffixIrisCodes = "_code.bmp";
+        mSuffixIrisCodesAndNormalizedMasksInBuffer = "_buffer.bin";
     }
 
     // Load the configuration from a textfile (ini)
@@ -223,6 +233,9 @@ namespace osiris
         // Load the list containing all images
         loadListOfImages();
 
+        // Load the list containing all iris codes and normalized masks
+        loadListOfIrisCodesAndNormalizedMasks();
+
         // Load the datas for Gabor filters
         if (mProcessEncoding && mFilenameGaborFilters != "")
         {
@@ -278,6 +291,8 @@ namespace osiris
         cout << endl;
 
         cout << "- List of images " << mFilenameListOfImages << " contains " << mListOfImages.size() << " images" << endl;
+
+        cout << "- List of iris codes and normalized masks " << mFilenameListOfIrisCodesAndNormalizedMasks << " contains " << mListOfIrisCodesAndNormalizedMasks.size() << " files" << endl;
 
         cout << endl;
 
@@ -486,6 +501,25 @@ namespace osiris
 
     } // end of function
 
+    // Load the application points from a textfile
+    void OsiManager::loadListOfIrisCodesAndNormalizedMasks()
+    {
+        // Open the file
+        ifstream file(mFilenameListOfIrisCodesAndNormalizedMasks.c_str(), ios::in);
+
+        // If file is not opened
+        if (!file)
+        {
+            throw runtime_error("Cannot load the list of images in " + mFilenameListOfIrisCodesAndNormalizedMasks);
+        }
+
+        // Fill in the list
+        copy(istream_iterator<string>(file), istream_iterator<string>(), back_inserter(mListOfIrisCodesAndNormalizedMasks));
+
+        // Close the file
+        file.close();
+    }
+
     // Load, segment, normalize, encode, and save according to user configuration
     void OsiManager::processOneEye(const string &rFileName, OsiEye &rEye)
     {
@@ -505,7 +539,12 @@ namespace osiris
 
                 rEye.loadOriginalImageFromBase64(mInputDirOriginalImagesBase64 + rFileName);
             }
-            else if (!mProcessBase64Images && mInputDirOriginalImages != "")
+            else if (mProcessBufferImages && mInputDirOriginalImagesBuffer != "")
+            {
+
+                rEye.loadOriginalImageFromBuffer(mInputDirOriginalImagesBuffer + rFileName);
+            }
+            else if (!mProcessBase64Images && !mProcessBufferImages && mInputDirOriginalImages != "")
             {
                 rEye.loadOriginalImage(mInputDirOriginalImages + rFileName);
             }
@@ -655,6 +694,19 @@ namespace osiris
                 rEye.saveIrisCode(mOutputDirIrisCodes + short_name + mSuffixIrisCodes);
             }
         }
+        // TODO: Save buffer iris code and normalized masks
+        // Save buffer iris code and normalized masks
+        if (mOutputDirBufferIrisCodeAndNormalizedMasks != "")
+        {
+            if (!mProcessEncoding)
+            {
+                cout << "Cannot save buffer iris code and normalized masks because they are neither computed nor loaded" << endl;
+            }
+            else
+            {
+                rEye.saveBufferIrisCodeAndNormalizedMasks(mOutputDirBufferIrisCodeAndNormalizedMasks + short_name + mSuffixIrisCodesAndNormalizedMasksInBuffer);
+            }
+        }
 
     } // end of function
 
@@ -683,11 +735,30 @@ namespace osiris
             }
         }
 
-        if (mProcessMatchingFromBuffer)
+        if (mProcessMatchingFromBuffer && mProcessMatching)
         {
-            OsiEye eye1;
-            float score = eye1.matchFromBuffer(mInputDirBufferIrisCodeAndNormalizedMasks + "file1.bin", mInputDirBufferIrisCodeAndNormalizedMasks + "file2.bin", mpApplicationPoints);
-            std::cout << "score: " << score << std::endl;
+            OsiEye eye;
+            for (int i = 0; i < mListOfIrisCodesAndNormalizedMasks.size() / 2; i += 1)
+            {
+                float score = eye.matchFromBuffer(mInputDirBufferIrisCodeAndNormalizedMasks + mListOfIrisCodesAndNormalizedMasks[i * 2], mInputDirBufferIrisCodeAndNormalizedMasks + mListOfIrisCodesAndNormalizedMasks[i * 2 + 1], mpApplicationPoints);
+                std::cout << "score: " << score << std::endl;
+                // Save in file
+                if (result_matching)
+                {
+                    std::cout << "result_matching..." << std::endl;
+                    try
+                    {
+                        result_matching << mListOfIrisCodesAndNormalizedMasks[i * 2] << " ";
+                        result_matching << mListOfIrisCodesAndNormalizedMasks[i * 2 + 1] << " ";
+                        result_matching << score << endl;
+                    }
+                    catch (exception &e)
+                    {
+                        cout << e.what() << endl;
+                        throw runtime_error("Error while saving result of matching in " + mOutputFileMatchingScores);
+                    }
+                }
+            }
         }
         else
         {

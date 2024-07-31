@@ -66,6 +66,7 @@ namespace osiris
 
         // Commands
         bool mProcessBase64Images ;
+        bool mProcessBufferImages ;
         bool mProcessSegmentation ;
         bool mProcessNormalization ;
         bool mProcessEncoding ;
@@ -75,9 +76,12 @@ namespace osiris
 
         // Inputs
         std::string mFilenameListOfImages ;
+        std::string mFilenameListOfIrisCodesAndNormalizedMasks ;
         std::vector<std::string> mListOfImages ;
+        std::vector<std::string> mListOfIrisCodesAndNormalizedMasks ;
         std::string mInputDirOriginalImages ;
         std::string mInputDirOriginalImagesBase64 ;
+        std::string mInputDirOriginalImagesBuffer ;
         std::string mInputDirBufferIrisCodeAndNormalizedMasks ;
         std::string mInputDirMasks ;
         std::string mInputDirParameters ;
@@ -92,6 +96,7 @@ namespace osiris
         std::string mOutputDirNormalizedImages ;
         std::string mOutputDirNormalizedMasks ;
         std::string mOutputDirIrisCodes ;
+        std::string mOutputDirBufferIrisCodeAndNormalizedMasks ;
         std::string mOutputFileMatchingScores ;
 
         // Parameters
@@ -113,6 +118,7 @@ namespace osiris
         std::string mSuffixNormalizedImages ;
         std::string mSuffixNormalizedMasks ;
         std::string mSuffixIrisCodes ;
+        std::string mSuffixIrisCodesAndNormalizedMasksInBuffer ;
 
         // Maps to associate a string (conf file) to a variable (not the value of the variable !)
         std::map<std::string,bool*> mMapBool ;
@@ -152,6 +158,8 @@ namespace osiris
         * encoding), it is more readable to present only one column.
         */
         void loadListOfImages ( ) ;
+
+        void loadListOfIrisCodesAndNormalizedMasks ( ) ;
 
         /** Load the Gabor filters.
         * The coefficient of Gabor filters are stored in a textfile

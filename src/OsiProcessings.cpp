@@ -486,33 +486,46 @@ namespace osiris
         IplImage *result = cvCreateImage(cvGetSize(image1), IPL_DEPTH_8U, 1);
         cvSet(result, cvScalar(0));
 
-        // Add borders on the image1 in order to shift it
+        // Add borders on both images in order to shift them
         int shift = 5;
-        IplImage *shifted = addBorders(image1, shift);
+        IplImage *shifted1 = addBorders(image1, shift);
+        IplImage *shifted2 = addBorders(image2, shift);
 
         // The minimum score will be returned
-        float score = 1;
+        float score1 = 1;
+        float score2 = 1;
 
         // Shift image1, and compare to image2
         for (int s = -shift; s <= shift; s++)
         {
-            cvSetImageROI(shifted, cvRect(shift + s, 0, image1->width, image1->height));
-            cvXor(shifted, image2, result, mask);
-            cvResetImageROI(shifted);
+            cvSetImageROI(shifted1, cvRect(shift + s, 0, image1->width, image1->height));
+            cvXor(shifted1, image2, result, mask);
+            cvResetImageROI(shifted1);
             float mean = (cvSum(result).val[0]) / (cvSum(mask).val[0]);
-            score = min(score, mean);
+            score1 = std::min(score1, mean);
+        }
+
+        // Shift image2, and compare to image1
+        for (int s = -shift; s <= shift; s++)
+        {
+            cvSetImageROI(shifted2, cvRect(shift + s, 0, image2->width, image2->height));
+            cvXor(shifted2, image1, result, mask);
+            cvResetImageROI(shifted2);
+            float mean = (cvSum(result).val[0]) / (cvSum(mask).val[0]);
+            score2 = std::min(score2, mean);
         }
 
         // Calculate the number of unmasked bits
         numUnmaskedBits = cvSum(mask).val[0];
 
         // Free memory
-        cvReleaseImage(&shifted);
+        cvReleaseImage(&shifted1);
+        cvReleaseImage(&shifted2);
         cvReleaseImage(&result);
 
-        return score;
+        // Return the average score
+        return (score1 + score2) / 2.0f;
     }
-
     ///////////////////////////////////
     // PRIVATE METHODS
     ///////////////////////////////////

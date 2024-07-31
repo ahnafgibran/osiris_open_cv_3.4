@@ -19,6 +19,8 @@
 #include <sstream>
 #include <vector>
 #include <chrono>
+#include <zlib.h>
+
 #include "../include/base64.hpp"
 
 using namespace std;
@@ -144,6 +146,68 @@ namespace osiris
         }
     }
 
+    void OsiEye::loadImageFromBuffer(const string &rFilename, IplImage **ppImage)
+    {
+        try
+        {
+            if (*ppImage)
+            {
+                cvReleaseImage(ppImage);
+            }
+
+            // Read the file content
+            ifstream file(rFilename, std::ios::binary);
+            if (!file)
+            {
+                cout << "Cannot open file : " << rFilename << endl;
+                return;
+            }
+
+            // Read file into a vector
+            vector<uchar> buffer(std::istreambuf_iterator<char>(file), {});
+            file.close();
+
+            std::cout << "Buffer size: " << buffer.size() << std::endl;
+
+            // Convert buffer data to cv::Mat
+            cv::Mat img = cv::imdecode(buffer, cv::IMREAD_GRAYSCALE);
+
+            if (img.empty())
+            {
+                cout << "Cannot decode image data from buffer" << endl;
+                return;
+            }
+            else
+            {
+                cout << "Image decoded from buffer data" << endl;
+            }
+
+            // Convert cv::Mat to IplImage
+            *ppImage = cvCreateImage(cvSize(img.cols, img.rows), IPL_DEPTH_8U, img.channels());
+            if (*ppImage)
+            {
+                memcpy((*ppImage)->imageData, img.data, img.total() * img.elemSize());
+            }
+            else
+            {
+                cout << "Cannot create IplImage from buffer data" << endl;
+            }
+
+            if (!*ppImage)
+            {
+                cout << "Cannot load image from buffer data" << endl;
+            }
+            else
+            {
+                cout << "Image loaded from buffer data" << endl;
+            }
+        }
+        catch (exception &e)
+        {
+            cout << e.what() << endl;
+        }
+    }
+
     void OsiEye::loadOriginalImage(const string &rFilename)
     {
         loadImage(rFilename, &mpOriginalImage);
@@ -153,6 +217,12 @@ namespace osiris
     {
         // loadImageFromBase64(rFilename, &mpOriginalImageBase64);
         loadImageFromBase64(rFilename, &mpOriginalImage);
+    }
+
+    void OsiEye::loadOriginalImageFromBuffer(const string &rFilename)
+    {
+        // loadImageFromBase64(rFilename, &mpOriginalImageBase64);
+        loadImageFromBuffer(rFilename, &mpOriginalImage);
     }
 
     void OsiEye::loadMask(const string &rFilename)
@@ -228,6 +298,27 @@ namespace osiris
         file.close();
     }
 
+    void OsiEye::convertIplImageToBuffer(const IplImage *image, std::vector<uint8_t> &buffer, int &width, int &height, int &channels)
+    {
+        if (image == nullptr)
+        {
+            throw std::runtime_error("Invalid IplImage pointer");
+        }
+
+        width = image->width;
+        height = image->height;
+        channels = image->nChannels;
+
+        size_t buffer_size = width * height * channels;
+        buffer.resize(buffer_size);
+        std::memcpy(buffer.data(), image->imageData, buffer_size);
+
+        std::cout << "Image width: " << width << std::endl;
+        std::cout << "Image height: " << height << std::endl;
+        std::cout << "Image channels: " << channels << std::endl;
+        std::cout << "Image size: " << buffer_size << std::endl;
+    }
+
     // Functions for saving images and parameters
     /////////////////////////////////////////////
 
@@ -244,6 +335,50 @@ namespace osiris
         {
             cout << "Cannot save image as " << rFilename << endl;
         }
+    }
+
+    void OsiEye::compressBuffer(const std::vector<uint8_t> &input, std::vector<uint8_t> &output)
+    {
+        uLongf compressed_size = compressBound(input.size());
+        output.resize(compressed_size);
+        if (compress(output.data(), &compressed_size, input.data(), input.size()) != Z_OK)
+        {
+            throw std::runtime_error("Failed to compress buffer");
+        }
+        output.resize(compressed_size);
+    }
+
+    void OsiEye::saveBuffersToFile(const std::string &output_file, const std::vector<uint8_t> &buffer1, int width1, int height1, int channels1,
+                                   const std::vector<uint8_t> &buffer2, int width2, int height2, int channels2)
+    {
+        std::ofstream output(output_file, std::ios::binary);
+        if (!output)
+        {
+            throw std::runtime_error("Failed to open file for writing: " + output_file);
+        }
+        const char delimiter[] = "\0\0\0\0DELIMITER\0\0\0\0";
+        size_t delimiter_size = sizeof(delimiter);
+
+        std::vector<uint8_t> compressed_buffer1, compressed_buffer2;
+        compressBuffer(buffer1, compressed_buffer1);
+        compressBuffer(buffer2, compressed_buffer2);
+
+        uint32_t compressed_size1 = static_cast<uint32_t>(compressed_buffer1.size());
+        uint32_t compressed_size2 = static_cast<uint32_t>(compressed_buffer2.size());
+
+        output.write(reinterpret_cast<const char *>(&width1), sizeof(width1));
+        output.write(reinterpret_cast<const char *>(&height1), sizeof(height1));
+        output.write(reinterpret_cast<const char *>(&channels1), sizeof(channels1));
+        output.write(reinterpret_cast<const char *>(&compressed_size1), sizeof(compressed_size1));
+        output.write(reinterpret_cast<const char *>(compressed_buffer1.data()), compressed_buffer1.size());
+        output.write(delimiter, delimiter_size);
+        output.write(reinterpret_cast<const char *>(&width2), sizeof(width2));
+        output.write(reinterpret_cast<const char *>(&height2), sizeof(height2));
+        output.write(reinterpret_cast<const char *>(&channels2), sizeof(channels2));
+        output.write(reinterpret_cast<const char *>(&compressed_size2), sizeof(compressed_size2));
+        output.write(reinterpret_cast<const char *>(compressed_buffer2.data()), compressed_buffer2.size());
+        output.close();
+        std::cout << "Buffers saved to file: " << output_file << std::endl;
     }
 
     void OsiEye::saveSegmentedImage(const string &rFilename)
@@ -269,6 +404,20 @@ namespace osiris
     void OsiEye::saveIrisCode(const string &rFilename)
     {
         saveImage(rFilename, mpIrisCode);
+    }
+
+    void OsiEye::saveBufferIrisCodeAndNormalizedMasks(const string &rFilename)
+    {
+        std::vector<uint8_t> buffer1, buffer2;
+        int width1, height1, channels1;
+        int width2, height2, channels2;
+
+        // Convert IplImage to buffer
+        convertIplImageToBuffer(mpIrisCode, buffer1, width1, height1, channels1);
+        convertIplImageToBuffer(mpNormalizedMask, buffer2, width2, height2, channels2);
+
+        // Save buffers to file
+        saveBuffersToFile(rFilename, buffer1, width1, height1, channels1, buffer2, width2, height2, channels2);
     }
 
     void OsiEye::saveParameters(const string &rFilename)
@@ -525,7 +674,15 @@ namespace osiris
         // return normalizedScore;
     }
 
-    // Function to read buffers and metadata from a file
+    void OsiEye::decompressBuffer(const std::vector<uint8_t> &input, std::vector<uint8_t> &output, size_t decompressed_size)
+    {
+        output.resize(decompressed_size);
+        if (uncompress(output.data(), &decompressed_size, input.data(), input.size()) != Z_OK)
+        {
+            throw std::runtime_error("Failed to decompress buffer");
+        }
+    }
+
     std::pair<IplImage *, IplImage *> OsiEye::read_buffers_from_file(const std::string &input_file)
     {
         std::ifstream input(input_file, std::ios::binary);
@@ -540,15 +697,16 @@ namespace osiris
         input.read(reinterpret_cast<char *>(&height1), sizeof(height1));
         input.read(reinterpret_cast<char *>(&channels1), sizeof(channels1));
 
-        std::cout << "Width 1: " << width1 << std::endl;
-        std::cout << "Height 1: " << height1 << std::endl;
+        uint32_t compressed_size1;
+        input.read(reinterpret_cast<char *>(&compressed_size1), sizeof(compressed_size1));
 
-        // Read the first image buffer
+        std::vector<uint8_t> compressed_buffer1(compressed_size1);
+        input.read(reinterpret_cast<char *>(compressed_buffer1.data()), compressed_size1);
+
+        // Decompress buffer 1
         size_t buffer1_size = width1 * height1 * channels1;
-        std::vector<uint8_t> buffer1(buffer1_size);
-        input.read(reinterpret_cast<char *>(buffer1.data()), buffer1.size());
-
-        std::cout << "Buffer 1 size: " << buffer1.size() << std::endl;
+        std::vector<uint8_t> buffer1;
+        decompressBuffer(compressed_buffer1, buffer1, buffer1_size);
 
         // Read delimiter
         const char delimiter[] = "\0\0\0\0DELIMITER\0\0\0\0";
@@ -566,14 +724,16 @@ namespace osiris
         input.read(reinterpret_cast<char *>(&height2), sizeof(height2));
         input.read(reinterpret_cast<char *>(&channels2), sizeof(channels2));
 
-        std::cout << "Width 2: " << width2 << std::endl;
-        std::cout << "Height 2: " << height2 << std::endl;
+        uint32_t compressed_size2;
+        input.read(reinterpret_cast<char *>(&compressed_size2), sizeof(compressed_size2));
 
+        std::vector<uint8_t> compressed_buffer2(compressed_size2);
+        input.read(reinterpret_cast<char *>(compressed_buffer2.data()), compressed_size2);
 
-        // Read the second image buffer
+        // Decompress buffer 2
         size_t buffer2_size = width2 * height2 * channels2;
-        std::vector<uint8_t> buffer2(buffer2_size);
-        input.read(reinterpret_cast<char *>(buffer2.data()), buffer2.size());
+        std::vector<uint8_t> buffer2;
+        decompressBuffer(compressed_buffer2, buffer2, buffer2_size);
 
         // Create IplImage for the first image
         IplImage *image1 = cvCreateImage(cvSize(width1, height1), IPL_DEPTH_8U, channels1);
@@ -585,7 +745,7 @@ namespace osiris
 
         return std::make_pair(image1, image2);
     }
-    
+
     float OsiEye::matchFromBuffer(const std::string &filename1, const std::string &filename2, const CvMat *pApplicationPoints)
     {
         // print size of pApplicationPoints

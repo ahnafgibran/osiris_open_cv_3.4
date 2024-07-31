@@ -15,11 +15,12 @@ RUN apt-get update && \
     cmake \
     make \
     wget \
-    && rm -rf /var/lib/apt/lists/*
+    zlib1g-dev && \  
+    rm -rf /var/lib/apt/lists/*
 
 # Set GCC 7 as default
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 \
-    && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 60
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 60
 
 # Install a newer version of CMake
 RUN wget https://github.com/Kitware/CMake/releases/download/v3.18.4/cmake-3.18.4-Linux-x86_64.sh && \

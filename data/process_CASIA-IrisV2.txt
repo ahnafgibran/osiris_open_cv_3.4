@@ -1,2 +1,2 @@
-aevar1.bmp
-aevar3.bmp
+Img_1_1_5.jpg
+Img_100_1_5.jpg
