@@ -113,7 +113,6 @@ namespace osiris
         maxIrisDiameter += (maxIrisDiameter % 2) ? 0 : +1;
         minPupilDiameter += (minPupilDiameter % 2) ? 0 : -1;
         maxPupilDiameter += (maxPupilDiameter % 2) ? 0 : +1;
-        std::cout << "minIrisDiameter: " << minIrisDiameter << " maxIrisDiameter: " << maxIrisDiameter << " minPupilDiameter: " << minPupilDiameter << " maxPupilDiameter: " << maxPupilDiameter << std::endl;
 
         // Start processing
         ///////////////////
@@ -615,42 +614,23 @@ namespace osiris
         // Start processing
         ///////////////////
 
-        // Print initial values
-        std::cout << "Initial minPupilDiameter: " << minPupilDiameter << std::endl;
-        std::cout << "Initial maxPupilDiameter: " << maxPupilDiameter << std::endl;
 
         // Resize image (downsample)
         float scale = (float)OSI_SMALLEST_PUPIL / minPupilDiameter;
         IplImage *resized = cvCreateImage(cvSize(pSrc->width * scale, pSrc->height * scale), pSrc->depth, 1);
         cvResize(pSrc, resized);
-        std::cout << "Resized image size: " << resized->width << "x" << resized->height << std::endl;
-        std::cout << "Scale factor: " << scale << std::endl;
 
         // Rescale sizes
         maxPupilDiameter = maxPupilDiameter * scale;
         minPupilDiameter = minPupilDiameter * scale;
-        std::cout << "Rescaled maxPupilDiameter: " << maxPupilDiameter << std::endl;
-        std::cout << "Rescaled minPupilDiameter: " << minPupilDiameter << std::endl;
 
         // Make sizes odd
         maxPupilDiameter += (maxPupilDiameter % 2) ? 0 : +1;
         minPupilDiameter += (minPupilDiameter % 2) ? 0 : -1;
-        std::cout << "Adjusted maxPupilDiameter (odd): " << maxPupilDiameter << std::endl;
-        std::cout << "Adjusted minPupilDiameter (odd): " << minPupilDiameter << std::endl;
 
         // Fill holes
         IplImage *filled = cvCreateImage(cvGetSize(resized), resized->depth, 1);
         fillWhiteHoles(resized, filled);
-        std::cout << "Filled image size: " << filled->width << "x" << filled->height << std::endl;
-        //         std::cout << "Input image (filled):" << std::endl;
-        // for (int i = 0; i < filled->height; ++i)
-        // {
-        //     for (int j = 0; j < filled->width; ++j)
-        //     {
-        //         std::cout << (int)(((uchar*)(filled->imageData + filled->widthStep * i))[j]) << " ";
-        //     }
-        //     std::cout << std::endl;
-        // }
 
         // Gradients in horizontal direction
         IplImage *gh = cvCreateImage(cvGetSize(filled), IPL_DEPTH_32F, 1);
@@ -716,7 +696,6 @@ namespace osiris
         // Multi resolution of radius
         for (int r = (OSI_SMALLEST_PUPIL - 1) / 2; r < (maxPupilDiameter - 1) / 2; r++)
         {
-            std::cout << "r: " << r << std::endl;
             // Centred ring with radius = r and width = 2
             cvZero(mask);
             cvCircle(mask, cvPoint((filter_size - 1) / 2, (filter_size - 1) / 2), r, cvScalar(1), 2);

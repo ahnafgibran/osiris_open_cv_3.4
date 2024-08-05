@@ -184,6 +184,8 @@ namespace osiris
         */
         void processOneEye ( const std::string & rName , OsiEye & rEye ) ;
 
+        void processOneEyeForMatchingTest(const std::string &rPath, OsiEye &rEye);
+
     } ; // End of class
 
 } // End of namespace

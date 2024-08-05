@@ -104,7 +104,6 @@ namespace osiris
 
             // Decode base64 string to bytes
             auto decodedData = base64::from_base64(base64String);
-            std::cout << "Decoded data size: " << decodedData.size() << std::endl;
 
             // Convert decoded data to cv::Mat
             vector<uchar> data(decodedData.begin(), decodedData.end());
@@ -167,7 +166,6 @@ namespace osiris
             vector<uchar> buffer(std::istreambuf_iterator<char>(file), {});
             file.close();
 
-            std::cout << "Buffer size: " << buffer.size() << std::endl;
 
             // Convert buffer data to cv::Mat
             cv::Mat img = cv::imdecode(buffer, cv::IMREAD_GRAYSCALE);
@@ -313,10 +311,6 @@ namespace osiris
         buffer.resize(buffer_size);
         std::memcpy(buffer.data(), image->imageData, buffer_size);
 
-        std::cout << "Image width: " << width << std::endl;
-        std::cout << "Image height: " << height << std::endl;
-        std::cout << "Image channels: " << channels << std::endl;
-        std::cout << "Image size: " << buffer_size << std::endl;
     }
 
     // Functions for saving images and parameters
@@ -489,14 +483,7 @@ namespace osiris
             throw std::runtime_error("Cannot segment image because original image is not loaded");
         }
 
-        // Print input parameters
-        std::cout << "minIrisDiameter: " << minIrisDiameter << std::endl;
-        std::cout << "minPupilDiameter: " << minPupilDiameter << std::endl;
-        std::cout << "maxIrisDiameter: " << maxIrisDiameter << std::endl;
-        std::cout << "maxPupilDiameter: " << maxPupilDiameter << std::endl;
 
-        // Verify the original image dimensions
-        std::cout << "Original Image Size: " << mpOriginalImage->width << "x" << mpOriginalImage->height << std::endl;
 
         // Initialize mask and segmented image
         mpMask = cvCreateImage(cvGetSize(mpOriginalImage), IPL_DEPTH_8U, 1);
@@ -521,10 +508,6 @@ namespace osiris
 
         cvCvtColor(mpOriginalImage, mpSegmentedImage, CV_GRAY2BGR);
 
-        // Print intermediate values
-        std::cout << "mpOriginalImage size: " << cvGetSize(mpOriginalImage).width << "x" << cvGetSize(mpOriginalImage).height << std::endl;
-        std::cout << "mpMask size: " << cvGetSize(mpMask).width << "x" << cvGetSize(mpMask).height << std::endl;
-        std::cout << "mpSegmentedImage size: " << cvGetSize(mpSegmentedImage).width << "x" << cvGetSize(mpSegmentedImage).height << std::endl;
 
         // Processing functions
         OsiProcessings op;
@@ -532,9 +515,6 @@ namespace osiris
         // Segment the eye
         op.segment(mpOriginalImage, mpMask, mPupil, mIris, mThetaCoarsePupil, mThetaCoarseIris, mCoarsePupilContour, mCoarseIrisContour, minIrisDiameter, minPupilDiameter, maxIrisDiameter, maxPupilDiameter);
 
-        // Print values after segmentation
-        std::cout << "mPupil center: (" << mPupil.getCenter().x << ", " << mPupil.getCenter().y << "), radius: " << mPupil.getRadius() << std::endl;
-        std::cout << "mIris center: (" << mIris.getCenter().x << ", " << mIris.getCenter().y << "), radius: " << mIris.getRadius() << std::endl;
 
         // Draw on segmented image
         IplImage *tmp = cvCloneImage(mpMask);
@@ -547,8 +527,6 @@ namespace osiris
         cvCircle(mpSegmentedImage, mPupil.getCenter(), mPupil.getRadius(), cvScalar(0, 255, 0));
         cvCircle(mpSegmentedImage, mIris.getCenter(), mIris.getRadius(), cvScalar(0, 255, 0));
 
-        // Print final segmented image info
-        std::cout << "Segmentation complete" << std::endl;
     }
 
     void OsiEye::normalize(int rWidthOfNormalizedIris, int rHeightOfNormalizedIris)
@@ -748,15 +726,10 @@ namespace osiris
 
     float OsiEye::matchFromBuffer(const std::string &filename1, const std::string &filename2, const CvMat *pApplicationPoints)
     {
-        // print size of pApplicationPoints
-        std::cout << "Application points size: " << pApplicationPoints->width << "x" << pApplicationPoints->height << std::endl;
-        std::cout << "Matching from buffer" << std::endl;
         // Read iris codes and masks from files
         auto [irisCode1, normalizedMask1] = read_buffers_from_file(filename1);
         auto [irisCode2, normalizedMask2] = read_buffers_from_file(filename2);
 
-        std::cout << "Iris code 1 size: " << irisCode1->width << std::endl;
-        std::cout << "Iris code 2 size: " << irisCode2->width << std::endl;
 
         if (!irisCode1 || !irisCode2)
         {
