@@ -37,8 +37,9 @@ RUN mkdir build
 # Set the working directory to /app/build
 WORKDIR /app/build
 
-# Set CXXFLAGS to use C++17
 ENV CXXFLAGS="-std=c++17"
+
+ENV LDFLAGS="-lstdc++fs"
 
 # Configure the project using CMake
 RUN cmake -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7 ..

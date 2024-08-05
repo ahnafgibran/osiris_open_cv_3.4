@@ -1,0 +1,100 @@
+Error processing image: ../data/dataset/103/Img_103_1_3.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/107/Img_107_1_4.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/107/Img_107_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/114/Img_114_1_3.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/114/Img_114_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/118/Img_118_1_3.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/118/Img_118_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/133/Img_133_1_4.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/133/Img_133_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/149/Img_149_1_1.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/150/Img_150_1_1.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/150/Img_150_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/185/Img_185_1_1.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/194/Img_194_1_4.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/200/Img_200_1_1.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/202/Img_202_1_1.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/203/Img_203_1_3.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/203/Img_203_1_4.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/203/Img_203_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/21/Img_21_1_4.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/211/Img_211_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/221/Img_221_1_2.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/221/Img_221_1_3.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/221/Img_221_1_4.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/221/Img_221_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/226/Img_226_1_2.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/229/Img_229_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/33/Img_33_1_4.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/54/Img_54_1_4.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/57/Img_57_1_4.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/57/Img_57_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/60/Img_60_1_1.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/60/Img_60_1_2.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/60/Img_60_1_3.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/60/Img_60_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/67/Img_67_1_2.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/67/Img_67_1_4.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/67/Img_67_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/77/Img_77_1_1.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/77/Img_77_1_2.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/77/Img_77_1_3.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/77/Img_77_1_4.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/77/Img_77_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/78/Img_78_1_2.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/78/Img_78_1_3.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/78/Img_78_1_5.jpg /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/suzaili/suzailil3.bmp /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/suzaili/suzailil4.bmp /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/suzaili/suzailil5.bmp /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+
+Error processing image: ../data/dataset/weecm/weecml1.bmp /opencv/modules/core/src/array.cpp:2928: error: (-25) Bad input roi in function cvInitImageHeader
+

@@ -9,10 +9,14 @@
 #include <fstream>
 #include <iterator>
 #include <stdexcept>
+#include <chrono>
+#include <experimental/filesystem>
 #include "OsiManager.h"
 #include "OsiStringUtils.h"
 
 using namespace std;
+
+namespace fs = std::experimental::filesystem;
 
 namespace osiris
 {
@@ -546,7 +550,8 @@ namespace osiris
             }
             else if (!mProcessBase64Images && !mProcessBufferImages && mInputDirOriginalImages != "")
             {
-                rEye.loadOriginalImage(mInputDirOriginalImages + rFileName);
+                // rEye.loadOriginalImage(mInputDirOriginalImages + rFileName);
+                rEye.loadOriginalImage(rFileName);
             }
             else
             {
@@ -737,81 +742,178 @@ namespace osiris
 
         if (mProcessMatchingFromBuffer && mProcessMatching)
         {
+            std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+
             OsiEye eye;
-            for (int i = 0; i < mListOfIrisCodesAndNormalizedMasks.size() / 2; i += 1)
+            std::string subjectDir = "../data/Output/BufferIrisCodes";
+
+            std::vector<std::string> irisFiles;
+            for (const auto &entry : fs::directory_iterator(subjectDir))
             {
-                float score = eye.matchFromBuffer(mInputDirBufferIrisCodeAndNormalizedMasks + mListOfIrisCodesAndNormalizedMasks[i * 2], mInputDirBufferIrisCodeAndNormalizedMasks + mListOfIrisCodesAndNormalizedMasks[i * 2 + 1], mpApplicationPoints);
-                std::cout << "score: " << score << std::endl;
-                // Save in file
-                if (result_matching)
+                if (fs::is_regular_file(entry) && entry.path().extension() == ".bin")
                 {
-                    std::cout << "result_matching..." << std::endl;
-                    try
-                    {
-                        result_matching << mListOfIrisCodesAndNormalizedMasks[i * 2] << " ";
-                        result_matching << mListOfIrisCodesAndNormalizedMasks[i * 2 + 1] << " ";
-                        result_matching << score << endl;
-                    }
-                    catch (exception &e)
-                    {
-                        cout << e.what() << endl;
-                        throw runtime_error("Error while saving result of matching in " + mOutputFileMatchingScores);
-                    }
+                    irisFiles.push_back(entry.path().string());
                 }
             }
-        }
-        else
-        {
 
-            for (int i = 0; i < mListOfImages.size(); i++)
+            for (size_t i = 0; i < irisFiles.size(); ++i)
             {
-                // Message on prompt command to know the progress
-                cout << i + 1 << " / " << mListOfImages.size() << endl;
-
-                try
+                for (size_t j = i + 1; j < irisFiles.size(); ++j)
                 {
-                    // Process the eye
-                    OsiEye eye;
-                    processOneEye(mListOfImages[i], eye);
+                    std::string outputFileName = "../data/Output/Matching/" + fs::path(irisFiles[i]).stem().string() + "_matching.txt";
+                    std::ofstream result_matching;
 
-                    // Process a second eye if matching is requested
-                    if (mProcessMatching && (i < mListOfImages.size() - 1))
+                    try
                     {
-                        std::cout << "matching..." << std::endl;
-                        i++;
-                        cout << i + 1 << " / " << mListOfImages.size() << endl;
-                        OsiEye eye2;
-                        processOneEye(mListOfImages[i], eye2);
+                        result_matching.open(outputFileName.c_str(), std::ios::out | std::ios::app);
+                    }
+                    catch (const std::exception &e)
+                    {
+                        std::cout << e.what() << std::endl;
+                        throw std::runtime_error("Cannot create the file for matching scores : " + outputFileName);
+                    }
 
-                        // Match the two iris codes
-                        float score = eye.match(eye2, mpApplicationPoints);
+                    try
+                    {
+                        std::chrono::steady_clock::time_point begin_matching = std::chrono::steady_clock::now();
+                        float score = eye.matchFromBuffer(irisFiles[i], irisFiles[j], mpApplicationPoints);
+                        std::chrono::steady_clock::time_point end_matching = std::chrono::steady_clock::now();
                         std::cout << "score: " << score << std::endl;
 
-                        // Save in file
                         if (result_matching)
                         {
                             std::cout << "result_matching..." << std::endl;
                             try
                             {
-                                result_matching << mListOfImages[i - 1] << " ";
-                                result_matching << mListOfImages[i] << " ";
-                                result_matching << score << endl;
+                                result_matching << irisFiles[i] << " ";
+                                result_matching << irisFiles[j] << " ";
+                                result_matching << score << " ";
+                                result_matching << std::chrono::duration_cast<std::chrono::milliseconds>(end_matching - begin_matching).count() << "[ms]" << std::endl;
                             }
-                            catch (exception &e)
+                            catch (const std::exception &e)
                             {
-                                cout << e.what() << endl;
-                                throw runtime_error("Error while saving result of matching in " + mOutputFileMatchingScores);
+                                std::cout << e.what() << std::endl;
+                                throw std::runtime_error("Error while saving result of matching in " + mOutputFileMatchingScores);
+                            }
+                        }
+                    }
+                    catch (const std::exception &e)
+                    {
+                        float score = -999;
+
+                        if (result_matching)
+                        {
+                            try
+                            {
+                                result_matching << irisFiles[i] << " ";
+                                result_matching << irisFiles[j] << " ";
+                                result_matching << score << std::endl;
+                            }
+                            catch (const std::exception &e)
+                            {
+                                std::cout << e.what() << std::endl;
+                                throw std::runtime_error("Error while saving result of matching in " + outputFileName);
                             }
                         }
                     }
                 }
+            }
 
-                catch (exception &e)
+            std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+            std::cout << "Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "[ms]" << std::endl;
+        }
+        else
+        {
+            std::string datasetPath = "../data/dataset";
+            std::ofstream errorFile;
+            errorFile.open("../data/Output/error.txt", std::ios_base::app);
+            for (const auto &entry : fs::directory_iterator(datasetPath))
+            {
+                if (fs::is_directory(entry))
                 {
-                    cout << e.what() << endl;
-                }
+                    std::string subjectDir = entry.path().string();
+                    std::cout << "Processing subject directory: " << subjectDir << std::endl;
 
-            } // end for images
+                    // Iterate through each iris image in the subject directory
+                    for (const auto &imageEntry : fs::directory_iterator(subjectDir))
+                    {
+                        if (fs::is_regular_file(imageEntry))
+                        {
+                            std::string irisImagePath = imageEntry.path().string();
+
+                            // Check if the file has a .jpg or .bmp extension
+                            std::string extension = irisImagePath.substr(irisImagePath.find_last_of(".") + 1);
+                            if (extension == "jpg" || extension == "bmp")
+                            {
+                                try
+                                {
+                                    // Process the eye
+                                    OsiEye eye;
+                                    processOneEye(irisImagePath, eye);
+                                }
+                                catch (exception &e)
+                                {
+                                    // save the error to a file with the irisImage Path
+
+                                    errorFile << "Error processing image: " << irisImagePath << " ";
+                                    errorFile << e.what() << std::endl;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            errorFile.close();
+            // for (int i = 0; i < mListOfImages.size(); i++)
+            // {
+            //     // Message on prompt command to know the progress
+            //     cout << i + 1 << " / " << mListOfImages.size() << endl;
+
+            //     try
+            //     {
+            //         // Process the eye
+            //         OsiEye eye;
+            //         processOneEye(mListOfImages[i], eye);
+
+            //         // Process a second eye if matching is requested
+            //         if (mProcessMatching && (i < mListOfImages.size() - 1))
+            //         {
+            //             std::cout << "matching..." << std::endl;
+            //             i++;
+            //             cout << i + 1 << " / " << mListOfImages.size() << endl;
+            //             OsiEye eye2;
+            //             processOneEye(mListOfImages[i], eye2);
+
+            //             // Match the two iris codes
+            //             float score = eye.match(eye2, mpApplicationPoints);
+            //             std::cout << "score: " << score << std::endl;
+
+            //             // Save in file
+            //             if (result_matching)
+            //             {
+            //                 std::cout << "result_matching..." << std::endl;
+            //                 try
+            //                 {
+            //                     result_matching << mListOfImages[i - 1] << " ";
+            //                     result_matching << mListOfImages[i] << " ";
+            //                     result_matching << score << endl;
+            //                 }
+            //                 catch (exception &e)
+            //                 {
+            //                     cout << e.what() << endl;
+            //                     throw runtime_error("Error while saving result of matching in " + mOutputFileMatchingScores);
+            //                 }
+            //             }
+            //         }
+            //     }
+
+            //     catch (exception &e)
+            //     {
+            //         cout << e.what() << endl;
+            //     }
+
+            // } // end for images
         }
 
         // If matching is requested, close the file
